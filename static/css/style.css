@@ -1,0 +1,183 @@
+:root {
+  --uni-red: #C41230;
+  --uni-red-dark: #980D24;
+  --uni-red-subtle: #FFF0F2;
+  --uni-red-border: #F8C6CD;
+  --uni-dark: #1E2229;
+  --uni-slate: #5A6578;
+  --uni-light-bg: #F8F9FA;
+  --uni-card-bg: #FFFFFF;
+  --uni-border: #E5E9F0;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+}
+
+body {
+  background-color: var(--uni-light-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #2D3748;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Top Header & Brand Bar --- */
+.uni-topbar {
+  background: linear-gradient(90deg, #980D24 0%, #C41230 100%);
+  border-bottom: 3px solid #780B1C;
+  color: #ffffff;
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+.brand-wrapper:hover {
+  color: #ffffff;
+}
+
+.uni-crest {
+  height: 42px;
+  width: auto;
+  background: #ffffff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.brand-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.brand-subtitle {
+  font-size: 0.75rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  opacity: 0.88;
+  font-weight: 500;
+}
+
+/* --- Cards & Containers --- */
+.card-uni {
+  background: var(--uni-card-bg);
+  border: 1px solid var(--uni-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-uni-header {
+  border-bottom: 2px solid var(--uni-red-subtle);
+  padding: 1.25rem 1.75rem;
+  font-weight: 700;
+}
+
+/* --- Buttons --- */
+.btn-uni-red {
+  background-color: var(--uni-red);
+  color: #ffffff;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.65rem 1.4rem;
+  transition: all 0.2s ease;
+}
+
+.btn-uni-red:hover, .btn-uni-red:focus {
+  background-color: var(--uni-red-dark);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(196, 18, 48, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-outline-uni {
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.btn-outline-uni:hover {
+  background-color: #ffffff;
+  color: var(--uni-red);
+}
+
+/* --- Custom Interactive Option Radio Cards --- */
+.option-card {
+  position: relative;
+  display: block;
+  border: 1.5px solid var(--uni-border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px 14px 44px;
+  cursor: pointer;
+  background-color: #ffffff;
+  transition: all 0.18s ease;
+  margin-bottom: 10px;
+}
+
+.option-card:hover {
+  border-color: var(--uni-red-border);
+  background-color: var(--uni-red-subtle);
+}
+
+.option-card input[type="radio"] {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  accent-color: var(--uni-red);
+  width: 18px;
+  height: 18px;
+}
+
+.option-card.selected,
+.option-card input[type="radio"]:checked + .option-text {
+  font-weight: 600;
+}
+
+.option-card:has(input[type="radio"]:checked) {
+  border-color: var(--uni-red);
+  background-color: var(--uni-red-subtle);
+  box-shadow: 0 0 0 2px rgba(196, 18, 48, 0.18);
+}
+
+/* --- Difficulty Badges --- */
+.badge-diff-easy {
+  background-color: #0E8043;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+}
+
+.badge-diff-medium {
+  background-color: #D97706;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+}
+
+.badge-diff-hard {
+  background-color: var(--uni-red);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+}
+
+/* --- Footer --- */
+footer {
+  margin-top: auto;
+  border-top: 1px solid var(--uni-border);
+  background-color: #ffffff;
+  color: var(--uni-slate);
+  font-size: 0.85rem;
+}
