@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card p-4 mb-4">
+            <h3 class="fw-bold mb-2">Welcome, {{ user.name }}</h3>
+            <p class="text-muted">CCNA Routing & Switching Practice Assessment</p>
+            <hr>
+
+            <h5 class="fw-bold mb-3">Anti-Cheating Exam Rules</h5>
+            <ul class="text-muted">
+                <li>Every student receives a <strong>scrambled subset of balanced questions</strong> (Easy, Medium, Hard).</li>
+                <li>Multiple-choice options (A, B, C, D) are randomly arranged per student.</li>
+                <li>Your assigned questions and choice order are locked upon clicking Start.</li>
+            </ul>
+
+            <div class="mt-4 text-center">
+                {% if last_attempt and last_attempt.status == 'in_progress' %}
+                    <a href="{{ url_for('take_exam', attempt_id=last_attempt.id) }}" class="btn btn-warning btn-lg px-5">
+                        Resume Active Exam
+                    </a>
+                {% else %}
+                    <form action="{{ url_for('start_exam') }}" method="POST">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">Start New Exam</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user.attempts %}
+            <div class="card p-4">
+                <h5 class="fw-bold mb-3">Your Previous Attempts</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Attempt ID</th>
+                                <th>Date</th>
+                                <th>Score</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in user.attempts|reverse %}
+                            <tr>
+                                <td>#{{ att.id }}</td>
+                                <td>{{ att.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if att.status == 'completed' %}
+                                        <span class="badge bg-{{ 'success' if att.score >= 70 else 'danger' }}">
+                                            {{ att.score }}% ({{ att.correct_count }}/{{ att.total_questions }})
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">In Progress</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ att.status|capitalize }}</td>
+                                <td>
+                                    {% if att.status == 'completed' %}
+                                        <a href="{{ url_for('exam_result', attempt_id=att.id) }}" class="btn btn-sm btn-outline-primary">Review</a>
+                                    {% else %}
+                                        <a href="{{ url_for('take_exam', attempt_id=att.id) }}" class="btn btn-sm btn-warning">Continue</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

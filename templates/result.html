@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card p-4 mb-4 text-center">
+            <h3 class="fw-bold">Exam Results</h3>
+            <p class="text-muted">Attempt #{{ attempt.id }} Completed</p>
+            <div class="display-3 fw-bold my-2 {{ 'text-success' if attempt.score >= 70 else 'text-danger' }}">
+                {{ attempt.score }}%
+            </div>
+            <p class="fs-5">You answered <strong>{{ attempt.correct_count }}</strong> out of <strong>{{ attempt.total_questions }}</strong> questions correctly.</p>
+            <div>
+                <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+            </div>
+        </div>
+
+        <h4 class="fw-bold mb-3">Question Breakdown</h4>
+        {% for item in breakdown %}
+            <div class="card p-3 mb-3 border-start border-4 {{ 'border-success' if item.is_correct else 'border-danger' }}">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="fw-bold">Q{{ item.order }}: {{ item.topic }}</span>
+                    <span class="badge badge-{{ item.difficulty }}">{{ item.difficulty|capitalize }}</span>
+                </div>
+                <p class="mb-2">{{ item.question }}</p>
+                <div class="small">
+                    <strong>Your Choice:</strong> 
+                    <span class="{{ 'text-success fw-bold' if item.is_correct else 'text-danger fw-bold' }}">
+                        {{ item.chosen }}
+                    </span>
+                    {% if not item.is_correct %}
+                        <div class="text-success mt-1">
+                            <strong>Correct Answer:</strong> {{ item.correct_answer }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
