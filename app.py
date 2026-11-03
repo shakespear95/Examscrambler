@@ -1,3 +1,4 @@
+import os
 import random
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash
@@ -5,14 +6,195 @@ from models import db, User, Question, Option, ExamAttempt, AttemptAnswer
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret-key-ccna-exam-2026'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///exam.db'
+
+# Use an absolute path for SQLite to prevent path issues in Docker/Fly.io
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(basedir, 'exam.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
 
 # -------------------------------------------------------------
-# HELPER DECORATORS & FUNCTIONS
+# DATABASE INITIALIZATION & SEEDER
+# -------------------------------------------------------------
+def init_db():
+    db.create_all()
+    # If no users exist, populate default users and CCNA question bank
+    if not User.query.first():
+        print("Empty database detected. Initializing tables and CCNA dataset...")
+        
+        # 1. Create Default Users
+        admin = User(email="teacher@exam.com", name="Prof. Davis", role="admin")
+        admin.set_password("admin123")
+        db.session.add(admin)
+
+        students_data = [
+            ("alice@exam.com", "Alice Smith", "student123"),
+            ("bob@exam.com", "Bob Johnson", "student123"),
+            ("charlie@exam.com", "Charlie Brown", "student123"),
+        ]
+        for email, name, pwd in students_data:
+            s = User(email=email, name=name, role="student")
+            s.set_password(pwd)
+            db.session.add(s)
+
+        # 2. Seed Starter CCNA Questions
+        ccna_questions = [
+            # --- EASY ---
+            {
+                "topic": "OSI Model",
+                "difficulty": "easy",
+                "text": "At which layer of the OSI model does a standard network switch operate?",
+                "options": [
+                    ("Layer 2 (Data Link)", True),
+                    ("Layer 3 (Network)", False),
+                    ("Layer 1 (Physical)", False),
+                    ("Layer 4 (Transport)", False),
+                ]
+            },
+            {
+                "topic": "IP Addressing",
+                "difficulty": "easy",
+                "text": "Which of the following is a private IPv4 address range according to RFC 1918?",
+                "options": [
+                    ("192.168.0.0/16", True),
+                    ("172.33.0.0/16", False),
+                    ("8.8.8.0/24", False),
+                    ("11.0.0.0/8", False),
+                ]
+            },
+            {
+                "topic": "Cisco CLI",
+                "difficulty": "easy",
+                "text": "Which Cisco IOS command transitions the user from User EXEC to Privileged EXEC mode?",
+                "options": [
+                    ("enable", True),
+                    ("configure terminal", False),
+                    ("switchport mode access", False),
+                    ("show run", False),
+                ]
+            },
+            {
+                "topic": "Transport Layer",
+                "difficulty": "easy",
+                "text": "Which protocol provides reliable, connection-oriented data transfer at Layer 4?",
+                "options": [
+                    ("TCP", True),
+                    ("UDP", False),
+                    ("ICMP", False),
+                    ("ARP", False),
+                ]
+            },
+
+            # --- MEDIUM ---
+            {
+                "topic": "Subnetting",
+                "difficulty": "medium",
+                "text": "How many usable host IP addresses are available in a subnet with a /27 prefix?",
+                "options": [
+                    ("30", True),
+                    ("32", False),
+                    ("62", False),
+                    ("14", False),
+                ]
+            },
+            {
+                "topic": "VLANs & Trunking",
+                "difficulty": "medium",
+                "text": "What standard IEEE protocol is used to encapsulate VLAN tags on an Ethernet trunk link?",
+                "options": [
+                    ("802.1Q", True),
+                    ("ISL", False),
+                    ("802.1D", False),
+                    ("802.3ad", False),
+                ]
+            },
+            {
+                "topic": "Routing Protocols",
+                "difficulty": "medium",
+                "text": "What administrative distance is assigned to OSPF routes by default on a Cisco router?",
+                "options": [
+                    ("110", True),
+                    ("90", False),
+                    ("120", False),
+                    ("1", False),
+                ]
+            },
+            {
+                "topic": "STP",
+                "difficulty": "medium",
+                "text": "In Spanning Tree Protocol (STP), which switch becomes the Root Bridge?",
+                "options": [
+                    ("The switch with the lowest Bridge ID (Priority + MAC)", True),
+                    ("The switch with the highest Bridge ID", False),
+                    ("The switch with the fastest physical interface", False),
+                    ("The switch configured as Default Gateway", False),
+                ]
+            },
+
+            # --- HARD ---
+            {
+                "topic": "Subnetting",
+                "difficulty": "hard",
+                "text": "Given IP 172.16.45.14 / 22, what is the valid network address and broadcast address?",
+                "options": [
+                    ("Network: 172.16.44.0, Broadcast: 172.16.47.255", True),
+                    ("Network: 172.16.45.0, Broadcast: 172.16.45.255", False),
+                    ("Network: 172.16.40.0, Broadcast: 172.16.47.255", False),
+                    ("Network: 172.16.44.0, Broadcast: 172.16.44.255", False),
+                ]
+            },
+            {
+                "topic": "OSPF",
+                "difficulty": "hard",
+                "text": "In a multi-access OSPF broadcast network, how is the Backup Designated Router (BDR) chosen?",
+                "options": [
+                    ("Highest OSPF priority, then highest Router ID (RID)", True),
+                    ("Lowest OSPF priority, then lowest IP on active interface", False),
+                    ("Lowest Router ID (RID) strictly", False),
+                    ("First router configured with 'router ospf'", False),
+                ]
+            },
+            {
+                "topic": "Access Control Lists",
+                "difficulty": "hard",
+                "text": "What implicit rule is present at the very end of every Cisco standard and extended IPv4 ACL?",
+                "options": [
+                    ("deny ip any any", True),
+                    ("permit ip any any", False),
+                    ("deny tcp any any eq 80", False),
+                    ("permit icmp any any", False),
+                ]
+            },
+        ]
+
+        for q_data in ccna_questions:
+            q = Question(
+                text=q_data["text"],
+                topic=q_data["topic"],
+                difficulty=q_data["difficulty"]
+            )
+            db.session.add(q)
+            db.session.flush()
+
+            for opt_text, is_correct in q_data["options"]:
+                opt = Option(
+                    question_id=q.id,
+                    text=opt_text,
+                    is_correct=is_correct
+                )
+                db.session.add(opt)
+
+        db.session.commit()
+        print("Database successfully initialized with users and CCNA questions.")
+
+with app.app_context():
+    init_db()
+
+
+# -------------------------------------------------------------
+# HELPER FUNCTIONS
 # -------------------------------------------------------------
 def get_current_user():
     user_id = session.get('user_id')
@@ -67,7 +249,6 @@ def student_dashboard():
     if not user or user.role != 'student':
         return redirect(url_for('login'))
 
-    # Check for existing attempts
     last_attempt = ExamAttempt.query.filter_by(user_id=user.id).order_by(ExamAttempt.id.desc()).first()
     return render_template('student_dashboard.html', user=user, last_attempt=last_attempt)
 
@@ -78,18 +259,16 @@ def start_exam():
     if not user or user.role != 'student':
         return redirect(url_for('login'))
 
-    # If already in progress, resume it rather than re-randomizing
+    # If already in progress, resume the existing session
     active_attempt = ExamAttempt.query.filter_by(user_id=user.id, status='in_progress').first()
     if active_attempt:
         return redirect(url_for('take_exam', attempt_id=active_attempt.id))
 
-    # Anti-Cheating & Balanced Distribution Algorithm:
-    # Pick balanced quotas across difficulty tiers (e.g. 2 easy, 2 medium, 2 hard)
+    # Anti-Cheating: Sample balanced questions across difficulties
     easy_pool = Question.query.filter_by(difficulty='easy').all()
     medium_pool = Question.query.filter_by(difficulty='medium').all()
     hard_pool = Question.query.filter_by(difficulty='hard').all()
 
-    # Take up to 2 from each category based on available questions
     selected_questions = (
         random.sample(easy_pool, min(2, len(easy_pool))) +
         random.sample(medium_pool, min(2, len(medium_pool))) +
@@ -99,19 +278,18 @@ def start_exam():
     # Scramble question display order
     random.shuffle(selected_questions)
 
-    # Create new exam attempt
     attempt = ExamAttempt(
         user_id=user.id,
         total_questions=len(selected_questions),
         status='in_progress'
     )
     db.session.add(attempt)
-    db.session.flush()  # Generates attempt.id
+    db.session.flush()
 
-    # For each question, scramble option choices and lock them in database
+    # Scramble options for each question and persist layout
     for order_idx, q in enumerate(selected_questions, start=1):
         opt_ids = [str(opt.id) for opt in q.options]
-        random.shuffle(opt_ids)  # Scramble A, B, C, D order for this student
+        random.shuffle(opt_ids)
 
         attempt_ans = AttemptAnswer(
             attempt_id=attempt.id,
@@ -139,13 +317,11 @@ def take_exam(attempt_id):
     if attempt.status == 'completed':
         return redirect(url_for('exam_result', attempt_id=attempt.id))
 
-    # Retrieve all assigned questions in their saved randomized order
     saved_answers = AttemptAnswer.query.filter_by(attempt_id=attempt.id).order_by(AttemptAnswer.question_order).all()
 
     exam_payload = []
     for sa in saved_answers:
         q = sa.question
-        # Reconstruct the shuffled options locked for this student
         ordered_opt_ids = [int(i) for i in sa.shuffled_option_ids.split(',')]
         options_dict = {opt.id: opt for opt in q.options}
         ordered_options = [options_dict[i] for i in ordered_opt_ids if i in options_dict]
@@ -176,7 +352,6 @@ def submit_exam(attempt_id):
     saved_answers = AttemptAnswer.query.filter_by(attempt_id=attempt.id).all()
     correct_count = 0
 
-    # Auto-Grader Logic
     for sa in saved_answers:
         form_key = f"question_{sa.id}"
         chosen_opt_id = request.form.get(form_key)
@@ -253,6 +428,4 @@ def admin_dashboard():
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
